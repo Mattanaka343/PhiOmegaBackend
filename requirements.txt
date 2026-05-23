@@ -1,0 +1,4 @@
+fastapi
+aiomysql
+scikit-learn
+python-dotenv
