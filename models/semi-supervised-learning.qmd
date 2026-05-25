@@ -1,0 +1,57 @@
+---
+title: Modelos de aprendizaje semi-supervisado para la elección de proveedores
+author: Mateo Yáñez Tanaka
+format:
+    html:
+        toc: true
+        self-contained-math: true
+        embed-resources: true
+        df-print: kable
+        html-math-method: katex
+---
+
+En este notebook se llevará a cabo y se probará el aprendizaje semi-supervisado para la predicción de proveedores de Vax en el contexto de la preddicón de costo de ordenes (pre-cotización de valores).
+
+## Motivación
+
+La motivación para llevar esto a cabo es simple: el carrier es información que no se tiene a priori a la hora de cotizar una orden pero parece ser un factor que influencia el precio final de la orden. Al ser relevante a la hora de cotizar creemos que añadirle un valor plausible al carrier puede resultar en predicciones de bastante mejor calidad. Adicionalmente después de discutirlo con el equipo se entró al acuerdo que la mejor forma de predecir este valor es dar una lista de opciones de manera que el valor de este campo pueda ser influenciado por el conocimiento de las órdenes actuales que puede llegar a tener el equipo. 
+
+
+## Modelado
+
+Habiendo explicado la motivación detrás de añadir este modelo a la pipeline procederemos a entrenar varios modelos con el. expreso propósito de encontrar aquel que tenga el moejor comportamiento. Para entrenar estos modelos usaremos la pipeline de estandarización y codificación de variables que fue definida para los modelos de regresión junto con los mismos conjuntos de validación, entrenamiento y prueba. Esto se realiza con el fin de evitar data leakage y para poder realmente probar que los modelos se comporten bien.
+
+Los que decidimos probar para este caso son los siguientes: 
+
+- DBSCAN
+- OPTICS
+- K-Means
+- Spectral Clustering
+- Gaussian Mixture Models
+
+Se probarán estos debido a que muestran diversas filosofías y formas de agrupar los datos. 
+
+## DBSCAN
+
+```{python}
+import pandas as pd
+import numpy as np
+import pickle as pk
+
+from sklearn.cluster import DBSCAN,OPTICS,KMeans,SpectralClustering
+from sklearn.mixture import GaussianMixture
+
+from sklearn.model_selection import train_test_split
+
+data = pd.read_csv('DataVaxModelos.csv')
+
+preprocessor = pk.load(pipeline.pkl)
+
+data_train, data_test = train_test_split(data,test_size=0.2,random_state=42)
+
+
+
+
+
+
+```
