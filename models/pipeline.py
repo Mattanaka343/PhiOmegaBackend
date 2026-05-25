@@ -7,33 +7,93 @@ from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, FunctionTransformer, StandardScaler
 from sklearn.impute import SimpleImputer
+from sklearn.base import BaseEstimator, TransformerMixin
+from transformers import log1p_transform
 
+class DateDifferenceTransformer(BaseEstimator, TransformerMixin):
 
-df = pd.read_csv('Data\DataVaxModelos.csv')
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X):
+
+        X = X.copy()
+
+        # convertir a datetime
+        X["creation_date"] = pd.to_datetime(
+            X["creation_date"],
+            dayfirst=True,
+            errors="coerce"
+        )
+
+        X["delivery_date"] = pd.to_datetime(
+            X["delivery_date"],
+            dayfirst=True,
+            errors="coerce"
+        )
+
+        # diferencia en días
+        X["delta_time"] = (
+            X["delivery_date"]
+            - X["creation_date"]
+        ).dt.days
+
+        # eliminar columnas originales
+        X = X.drop(columns=[
+            "creation_date",
+            "delivery_date"
+        ])
+
+        return X
+
+# ---------------------------
+# 1. Cargar datos
+# ---------------------------
+
+df = pd.read_csv('DataVaxModelos.csv')
 df = df.drop(columns=df.columns[0])
 
 df= df.drop_duplicates()
 df.dropna(inplace=True,subset="sale")
 
-Y = df["sale"]
-X= df.drop(columns="sale")
+#contar 0s en "sale"
+print(f"Cantidad de 0s en 'sale': {(df['sale'] == 0).sum()}")
+# eliminar filas con "sale" igual a 0
+df = df[df["sale"] != 0]
 
-X["delta_time"] = (pd.to_datetime(X["delivery_date"]) - pd.to_datetime(X["creation_date"])).dt.days
-X.drop(columns=["creation_date","delivery_date"],inplace=True)
+
+Y = df["sale"]
+X = df.drop(columns="sale")
+
+#X["delta_time"] = (pd.to_datetime(X["delivery_date"]) - pd.to_datetime(X["creation_date"])).dt.days
+#X.drop(columns=["creation_date","delivery_date"],inplace=True)
+
+
+# ---------------------------
+# 3. Split
+# ---------------------------
 
 X_train, X_test, y_train, y_test = train_test_split(
     X, Y, test_size=0.3, random_state=42
 )
 
+# ---------------------------
+# 4. Tipos de columnas
+# ---------------------------
+
+#num_cols = X_train.select_dtypes(include=["int64", "float64"]).columns
+#cat_cols = X_train.select_dtypes(include=["object", "category"]).columns
 
 
-num_cols = X_train.select_dtypes(include=["int64", "float64"]).columns
-cat_cols = X_train.select_dtypes(include=["object", "category"]).columns
+temp = DateDifferenceTransformer().transform(X_train.copy())
+
+num_cols = temp.select_dtypes(include=["int64","float64"]).columns
+cat_cols = temp.select_dtypes(include=["object","category"]).columns
 
 
-from transformers import log1p_transform
-
-
+# ---------------------------
+# 5. Pipelines
+# ---------------------------
 numeric_pipeline = Pipeline([
     ("imputer", SimpleImputer(strategy="median")),
     ("log", FunctionTransformer(log1p_transform)),
@@ -53,69 +113,36 @@ preprocessor = ColumnTransformer([
 
 preprocessor.set_output(transform="pandas")
 
+
+# ---------------------------
+# 6. Pipeline final
+# ---------------------------
 pipeline = Pipeline([
+    ("date_features", DateDifferenceTransformer()),
     ("preprocessor", preprocessor)
 ])
 
 
-
+# ---------------------------
+# 7. Fit
+# ---------------------------
 pipeline.fit(X_train)
 
+# ---------------------------
+# 8. Transform
+# ---------------------------
 X_train_processed = pipeline.transform(X_train)
 X_test_processed = pipeline.transform(X_test)
 
+print(type(X_train_processed))  # <- pandas DataFrame
+print(X_train_processed.head())
 
-from sklearn.linear_model import LinearRegression
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import (
-    mean_squared_error, mean_absolute_error, r2_score
-)
-from xgboost import XGBRegressor
-from catboost import CatBoostRegressor
-
-
-models = {
-    "OLS (Linear Regression)": LinearRegression(),
-    "Random Forest":           RandomForestRegressor(n_estimators=100, random_state=42),
-    "XGBoost":                 XGBRegressor(n_estimators=100, random_state=42, verbosity=0),
-    "CatBoost":                CatBoostRegressor(iterations=100, random_state=42, verbose=0),
-
+# ---------------------------
+# 9. Guardar .pkl
+# ---------------------------
+artifact = {
+    "pipeline": pipeline
 }
 
+joblib.dump(artifact, "../Utils/preprocessing_pipeline.pkl")
 
-#--------------Training-----------------------
-results = []
-
-for name, model in models.items():
-    model.fit(X_train_processed, y_train)
-    y_pred = model.predict(X_test_processed)
-
-    rmse = np.sqrt(mean_squared_error(y_test, y_pred))
-    mae  = mean_absolute_error(y_test, y_pred)
-    r2   = r2_score(y_test, y_pred)
-
-    results.append({
-        "Model": name,
-        "RMSE":  rmse,
-        "MAE":   mae,
-        "R²":    r2,
-    })
-
-    print(f"\n{'='*40}")
-    print(f"  {name}")
-    print(f"{'='*40}")
-    print(f"  RMSE : {rmse:.4f}")
-    print(f"  MAE  : {mae:.4f}")
-    print(f"  R²   : {r2:.4f}")
-
-# ── 5. Summary table ───────────────────────────────────────────────────────────
-summary = pd.DataFrame(results).sort_values("MAE", ascending=True)
-print("\n── Summary ──────────────────────────────")
-print(summary.to_string(index=False))
-
-# ── 6. Save best model ─────────────────────────────────────────────────────────
-best_name  = summary.iloc[0]["Model"]
-best_model = models[best_name]
-
-joblib.dump(best_model, "Utils/best_model.pkl")
-print(f"\n✓ Best model saved: {best_name}")
