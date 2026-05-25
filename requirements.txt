@@ -2,3 +2,7 @@ fastapi
 aiomysql
 scikit-learn
 python-dotenv
+joblib
+pandas
+xgboost
+catboost
