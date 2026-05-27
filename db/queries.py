@@ -132,7 +132,7 @@ async def fetch_status_pie_graph(since: date, until:date,limit:int) -> dict:
 
         GROUP BY e.estatus
         ORDER BY total DESC;
-        """, (since, until)
+        """, (since, until,limit)
         )
 
         rows = await cur.fetchall()
@@ -226,7 +226,7 @@ async def fetch_clients_db( order_by: str, order_how: str):
     conn.close()
     return rows
 
-async def fetch_clients_db(order_by: str, order_how:str):
+async def fetch_users_db(order_by: str, order_how:str):
     """
     """
     conn  = await get_conn()
