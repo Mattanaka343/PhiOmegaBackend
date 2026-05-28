@@ -144,5 +144,5 @@ artifact = {
     "pipeline": pipeline
 }
 
-joblib.dump(artifact, "../Utils/preprocessing_pipeline.pkl")
+joblib.dump(artifact, "preprocessing_pipeline.pkl")
 

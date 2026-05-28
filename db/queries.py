@@ -104,15 +104,15 @@ async def fetch_top_client_bar_chart(since: date, until: date, limit:int) -> dic
         GROUP BY c.nombre
 
         ORDER BY utilidad DESC
-        LIMIT %s ;
-        """, (since, until, limit))
+        LIMIT {limit} ;
+        """, (since, until))
 
         rows = await cur.fetchall()
     
     conn.close()
     return rows
 
-async def fetch_status_pie_graph(since: date, until:date,limit:int) -> dict:
+async def fetch_status_pie_graph(since: date, until:date) -> dict:
     """
     """
 
@@ -132,7 +132,7 @@ async def fetch_status_pie_graph(since: date, until:date,limit:int) -> dict:
 
         GROUP BY e.estatus
         ORDER BY total DESC;
-        """, (since, until,limit)
+        """, (since, until)
         )
 
         rows = await cur.fetchall()
@@ -161,7 +161,7 @@ async def fetch_best_sales_reps(since: date, until: date, limit:int) -> dict:
         
         GROUP BY nombre
         ORDER BY utilidad DESC
-        LIMIT %s ;
+        LIMIT {limit} ;
         """, (since,until,limit)
         )
 
@@ -191,7 +191,7 @@ async def fetch_most_orders_clients(since: date, until: date, limit: int) -> dic
 
         GROUP BY cliente
         ORDER BY total_orders DESC
-        LIMIT %s ;
+        LIMIT {limit} ;
         """, (since,until,limit)
         )
 
@@ -212,13 +212,14 @@ async def fetch_clients_db( order_by: str, order_how: str):
             COUNT(*)                AS ordenes,
             SUM(t.utilidad_mxn)     AS utilidad
 
+
         FROM transacciones t
         JOIN clientes c
             ON t.id_cliente = c.id
 
         GROUP BY cliente
-        ORDER BY %s {order_how};
-        """,(order_by)
+        ORDER BY {order_by} {order_how};
+        """
         )
 
         rows = await cur.fetchall()
@@ -233,18 +234,20 @@ async def fetch_users_db(order_by: str, order_how:str):
 
     async with conn.cursor() as cur:
         await cur.execute(
-        f"""
+        """
         SELECT u.nombre         AS sales_rep,
             COUNT(*)            AS ordenes,
-            SUM(t.utilidad_mxn) AS utilidad 
+            SUM(t.utilidad_mxn) AS utilidad,
+            u.id                AS id,
+            u.correo            AS correo
         
         FROM transacciones t
         JOIN usuarios u
             ON t.sales_rep_id = u.id
         
         GROUP BY sales_rep
-        ORDER BY %s {order_how};
-        """,(order_by)
+        ORDER BY {order_by} {order_how};
+        """
         )
 
         rows = await cur.fetchall()
@@ -252,3 +255,63 @@ async def fetch_users_db(order_by: str, order_how:str):
     conn.close()
     return rows
 
+
+
+async def add_client_query(name: str):
+    """
+    """
+    conn = await get_conn()
+
+    async with conn.cursor() as cur:
+        await cur.execute(
+        """
+        INSERT INTO clientes (nombre)
+        VALUES
+        (%s);
+        """, (name,)
+        )
+    
+    await conn.commit()
+    conn.close()
+
+
+
+
+async def add_sales_rep_query(name: str, mail:str):
+    """
+    """
+    conn = await get_conn()
+
+    async with conn.cursor() as cur:
+        await cur.execute(
+        """
+        INSERT INTO usuarios (nombre, correo, cargo)
+        VALUES
+        (%s,%s,'sales rep');
+        """, (name, mail)
+        )
+    
+    await conn.commit()
+    conn.close()
+
+
+
+
+async def add_place_query(ciudad: str, estado:str, latitud:float, longitud:float):
+    """
+    """
+    conn = await get_conn()
+
+    async with conn.cursor() as cur:
+        await cur.execute(
+        """
+        INSERT INTO lugares (ciudad,estado,latitud,longitud)
+        VALUES
+        (%s, %s, %s, %s)
+        """,(ciudad,estado,latitud,longitud)
+        )
+    
+    await conn.commit()
+    conn.close()
+ 
+ 

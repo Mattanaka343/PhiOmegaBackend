@@ -13,7 +13,7 @@ import pandas as pd
 import numpy as np
 
 
-artifact = joblib.load("../Utils/preprocessing_pipeline.pkl")
+artifact = joblib.load("preprocessing_pipeline.pkl")
 
 pipeline = artifact["pipeline"]
 
