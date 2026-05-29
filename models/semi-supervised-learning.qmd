@@ -27,27 +27,29 @@ Los que decidimos probar para este caso son los siguientes:
 - OPTICS
 - K-Means
 - Spectral Clustering
-- Gaussian Mixture Models
 
-Se probarán estos debido a que muestran diversas filosofías y formas de agrupar los datos. 
+Se probarán estos debido a que muestran diversas filosofías y formas de agrupar los datos. Previo al entrenamiento de los modelos se aplicará la misma pipeline que para los modelos de regresión con la única diferencia siendo que se excluíra el valor del carrier.
+
+```{python}
+
+```
 
 ## DBSCAN
 
 ```{python}
 import pandas as pd
 import numpy as np
-import pickle as pk
+
+import joblib as jb
 
 from sklearn.cluster import DBSCAN,OPTICS,KMeans,SpectralClustering
-from sklearn.mixture import GaussianMixture
 
 from sklearn.model_selection import train_test_split
 
 data = pd.read_csv('DataVaxModelos.csv')
 
-preprocessor = pk.load(pipeline.pkl)
 
-data_train, data_test = train_test_split(data,test_size=0.2,random_state=42)
+#data_train, data_test = train_test_split(data,test_size=0.2,random_state=42)
 
 
 

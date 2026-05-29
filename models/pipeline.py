@@ -7,48 +7,9 @@ from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, FunctionTransformer, StandardScaler
 from sklearn.impute import SimpleImputer
-from sklearn.base import BaseEstimator, TransformerMixin
 from transformers import log1p_transform
 
-class DateDifferenceTransformer(BaseEstimator, TransformerMixin):
-
-    def fit(self, X, y=None):
-        return self
-
-    def transform(self, X):
-
-        X = X.copy()
-
-        # convertir a datetime
-        X["creation_date"] = pd.to_datetime(
-            X["creation_date"],
-            dayfirst=True,
-            errors="coerce"
-        )
-
-        X["delivery_date"] = pd.to_datetime(
-            X["delivery_date"],
-            dayfirst=True,
-            errors="coerce"
-        )
-
-        # diferencia en días
-        X["delta_time"] = (
-            X["delivery_date"]
-            - X["creation_date"]
-        ).dt.days
-
-        # eliminar columnas originales
-        X = X.drop(columns=[
-            "creation_date",
-            "delivery_date"
-        ])
-
-        return X
-
-# ---------------------------
-# 1. Cargar datos
-# ---------------------------
+from pipeline_classes import DateDifferenceTransformer, TotalAccesorialCreator
 
 df = pd.read_csv('DataVaxModelos.csv')
 df = df.drop(columns=df.columns[0])
@@ -65,26 +26,11 @@ df = df[df["sale"] != 0]
 Y = df["sale"]
 X = df.drop(columns="sale")
 
-#X["delta_time"] = (pd.to_datetime(X["delivery_date"]) - pd.to_datetime(X["creation_date"])).dt.days
-#X.drop(columns=["creation_date","delivery_date"],inplace=True)
 
-
-# ---------------------------
-# 3. Split
-# ---------------------------
 
 X_train, X_test, y_train, y_test = train_test_split(
     X, Y, test_size=0.3, random_state=42
 )
-
-# ---------------------------
-# 4. Tipos de columnas
-# ---------------------------
-
-#num_cols = X_train.select_dtypes(include=["int64", "float64"]).columns
-#cat_cols = X_train.select_dtypes(include=["object", "category"]).columns
-
-
 temp = DateDifferenceTransformer().transform(X_train.copy())
 
 #num_cols = temp.select_dtypes(include=["int64","float64"]).columns
@@ -122,24 +68,8 @@ preprocessor = ColumnTransformer([
 
 preprocessor.set_output(transform="pandas")
 
-
-# ---------------------------
-# 6. Pipeline final
-# ---------------------------
-pipeline = Pipeline([
-    ("date_features", DateDifferenceTransformer()),
-    ("preprocessor", preprocessor)
-])
-
-
-# ---------------------------
-# 7. Fit
-# ---------------------------
+pipeline = Pipeline([('date_converter',DateDifferenceTransformer()), ('accessorial_creator',TotalAccesorialCreator), ('preprocessor', preprocessor) ])
 pipeline.fit(X_train)
-
-# ---------------------------
-# 8. Transform
-# ---------------------------
 X_train_processed = pipeline.transform(X_train)
 X_test_processed = pipeline.transform(X_test)
 
@@ -153,5 +83,5 @@ artifact = {
     "pipeline": pipeline
 }
 
-joblib.dump(artifact, "../Utils/preprocessing_pipeline.pkl")
+joblib.dump(artifact, "preprocessing_pipeline.pkl")
 
