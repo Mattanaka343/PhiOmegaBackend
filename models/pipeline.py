@@ -57,7 +57,7 @@ df= df.drop_duplicates()
 df.dropna(inplace=True,subset="sale")
 
 #contar 0s en "sale"
-print(f"Cantidad de 0s en 'sale': {(df['sale'] == 0).sum()}")
+#print(f"Cantidad de 0s en 'sale': {(df['sale'] == 0).sum()}")
 # eliminar filas con "sale" igual a 0
 df = df[df["sale"] != 0]
 
@@ -87,19 +87,27 @@ X_train, X_test, y_train, y_test = train_test_split(
 
 temp = DateDifferenceTransformer().transform(X_train.copy())
 
-num_cols = temp.select_dtypes(include=["int64","float64"]).columns
+#num_cols = temp.select_dtypes(include=["int64","float64"]).columns
+int_cols = temp.select_dtypes(include=["int64"]).columns
+float_cols = temp.select_dtypes(include=["float64"]).columns
 cat_cols = temp.select_dtypes(include=["object","category"]).columns
 
 
 # ---------------------------
 # 5. Pipelines
 # ---------------------------
-numeric_pipeline = Pipeline([
+# Para enteros -> log + scaler
+int_pipeline = Pipeline([
     ("imputer", SimpleImputer(strategy="median")),
     ("log", FunctionTransformer(log1p_transform)),
     ("scaler", StandardScaler())
 ])
 
+# Para floats -> solo scaler
+float_pipeline = Pipeline([
+    ("imputer", SimpleImputer(strategy="median")),
+    ("scaler", StandardScaler())
+])
 
 categorical_pipeline = Pipeline([
     ("imputer", SimpleImputer(strategy="most_frequent")),
@@ -107,7 +115,8 @@ categorical_pipeline = Pipeline([
 ])
 
 preprocessor = ColumnTransformer([
-    ("num", numeric_pipeline, num_cols),
+    ("int", int_pipeline, int_cols),
+    ("float", float_pipeline, float_cols),
     ("cat", categorical_pipeline, cat_cols)
 ])
 

@@ -24,7 +24,7 @@ df= df.drop_duplicates()
 df.dropna(inplace=True,subset="sale")
 
 #contar 0s en "sale"
-print(f"Cantidad de 0s en 'sale': {(df['sale'] == 0).sum()}")
+#print(f"Cantidad de 0s en 'sale': {(df['sale'] == 0).sum()}")
 # eliminar filas con "sale" igual a 0
 df = df[df["sale"] != 0]
 
