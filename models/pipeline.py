@@ -31,7 +31,10 @@ X = df.drop(columns="sale")
 X_train, X_test, y_train, y_test = train_test_split(
     X, Y, test_size=0.3, random_state=42
 )
+
 temp = DateDifferenceTransformer().transform(X_train.copy())
+temp = TotalAccesorialCreator().transform(temp)
+
 
 #num_cols = temp.select_dtypes(include=["int64","float64"]).columns
 int_cols = temp.select_dtypes(include=["int64"]).columns
@@ -68,8 +71,12 @@ preprocessor = ColumnTransformer([
 
 preprocessor.set_output(transform="pandas")
 
-pipeline = Pipeline([('date_converter',DateDifferenceTransformer()), ('accessorial_creator',TotalAccesorialCreator), ('preprocessor', preprocessor) ])
+pipeline = Pipeline([('date_converter',DateDifferenceTransformer()), 
+                     ('accessorial_creator',TotalAccesorialCreator()), 
+                     ('preprocessor', preprocessor) ])
+
 pipeline.fit(X_train)
+
 X_train_processed = pipeline.transform(X_train)
 X_test_processed = pipeline.transform(X_test)
 

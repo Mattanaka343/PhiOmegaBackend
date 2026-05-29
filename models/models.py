@@ -92,7 +92,7 @@ print(summary.to_string(index=False))
 best_name  = summary.iloc[0]["Model"]
 best_model = models[best_name]
 
-joblib.dump(best_model, "../Utils/best_model.pkl")
+joblib.dump(best_model, "best_model.pkl")
 print(f"\n✓ Best model saved: {best_name}")
 
 
@@ -206,9 +206,9 @@ print("\n── Tuned Models Summary ──────────────�
 print(tuned_summary.to_string(index=False))
 
 # Opcional: guardar resultados como CSV
-tuned_summary.to_csv("../Utils/tuned_models_results.csv", index=False)
+tuned_summary.to_csv("tuned_models_results.csv", index=False)
 
 # ── 9. Save best tuned model ──────────────────────────────────────────────────
-joblib.dump(best_tuned_model, "../Utils/best_tuned_model.pkl")
+joblib.dump(best_tuned_model, "best_tuned_model.pkl")
 
 print(f"\n✓ Best tuned model saved: {best_tuned_name}")
